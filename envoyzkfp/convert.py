@@ -191,7 +191,7 @@ def generate_base():
             'access_log_path': '/dev/null',
             'address': {
                 'socket_address': {
-                    'address': '0.0.0.0',
+                    'address': '127.0.0.1',
                     'port_value': 9901,
                 },
             },
