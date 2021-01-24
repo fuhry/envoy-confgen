@@ -21,11 +21,11 @@ listeners:
 backends:
   # one entry per backend host
   - host: example.com
-  	proxy_protocol: v2
-  	# optional, defaults to 80
-  	http_port: 80
-  	# optional, defaults to 443
-  	http_port: 443
+    proxy_protocol: v2
+    # optional, defaults to 80
+    http_port: 80
+    # optional, defaults to 443
+    http_port: 443
     patterns:
       # each pattern will be matched on the HTTP host header (plain http) or
       # TLS SNI (HTTPS)
