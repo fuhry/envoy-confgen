@@ -1,0 +1,14 @@
+# vim:set ft=yaml sts=2 sw=2 et:
+
+listeners:
+  - protocol: http
+    port: 80
+    address: "::"
+  - protocol: https
+    port: 443
+    address: "::"
+backends:
+  - host: example.com
+    patterns:
+      - "*.example.com"
+      - "example.com"
