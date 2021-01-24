@@ -1,7 +1,10 @@
 import yaml
 import sys
 import re
+from .config import singleton
 from copy import deepcopy
+
+config = singleton.get_config()
 
 def generate_listener(protocol, backends, address='::', port=443):
     return {
@@ -138,7 +141,7 @@ def generate_filter_chains(protocol, backends):
                                     'name': 'envoy.access_loggers.file',
                                     'typed_config': {
                                         '@type': 'type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog',
-                                        'path': '/dev/stdout',
+                                        'path': config['envoy']['access_log'],
                                     },
                                 },
                             ],
@@ -168,7 +171,7 @@ def generate_filter_chains(protocol, backends):
                                     'name': 'envoy.access_loggers.file',
                                     'typed_config': {
                                         '@type': 'type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog',
-                                        'path': '/dev/stdout',
+                                        'path': config['envoy']['access_log'],
                                     },
                                 },
                             ],

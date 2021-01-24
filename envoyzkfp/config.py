@@ -64,11 +64,14 @@ class Config:
             'file_level': 'info',
             'syslog_level': 'warn',
         },
+        'envoy': {
+            'access_log': '/dev/stdout'
+        },
     }
 
     search_paths = (
         os.path.join(os.getcwd(), 'conf', 'envoy-zkfp.ini'),
-        '/etc/envoy-zkfp/envoy-zkfp.ini',
+        '/etc/envoy/zkfp.ini',
     )
 
     def __init__(self):
