@@ -4,8 +4,8 @@ Configurator for Envoy to expose bare-minimum TLS SNI proxy functionality in a s
 
 ## Features
 
-- Generate initial configuration
-- TODO: Reconfigure running Envoy instance using XDS
+- Generates startup configuration with static resources only
+- TODO: XDS service
 - TODO: Instant reload using inotify
 
 ## Schema
@@ -32,3 +32,15 @@ backends:
       - "*.example.com"
       - "example.com"
 ```
+
+## Requirements
+
+* [envoyproto-python](https://github.com/fuhry/envoyproto-python).
+
+# Author
+
+Dan Fuhry <[dan@fuhry.com](mailto:dan@fuhry.com)>
+
+# License
+
+This project is released under the [Apache License 2.0](LICENSE).

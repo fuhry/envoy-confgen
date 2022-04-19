@@ -65,7 +65,8 @@ class Config:
             'syslog_level': 'warn',
         },
         'envoy': {
-            'access_log': '/dev/stdout'
+            'access_log': '/dev/stdout',
+            'admin_port': 9901,
         },
     }
 
