@@ -1,14 +1,50 @@
-# Envoy Zero Knowledge Frontend Proxy
+# Envoy Config Generator
 
-Configurator for Envoy to expose bare-minimum TLS SNI proxy functionality in a simple YAML format.
+Tool for building processors that turn simple YAML into complete, working Envoy proxy configuration.
 
-## Features
+## Usage
 
-- Generates startup configuration with static resources only
-- TODO: XDS service
-- TODO: Instant reload using inotify
+```shell
+$ envoy-confgen -p <processor> input.yaml [-o output.yaml]
+```
 
-## Schema
+* `<processor>` is the processor you want to have parse your YAML. Think of it as a profile or preset.
+* `input.yaml` - format is defined in schemas below
+* `-o output.yaml` - file to write generated envoy configuration to; if omitted, writes to standard output.
+
+## Processors
+
+### `mtls_sidecar`: mTLS-enforcing universal sidecar
+
+Universal sidecar designed to wrap any HTTP service in mTLS.
+
+The schema is simple:
+
+```yaml
+backend:
+  host: 127.0.0.1    # optional, defaults to "127.0.0.1"
+  port: 12345
+  ca_cert: /some/path   # optional - if omitted, connects using plain HTTP
+listener:
+  port: 12346
+  ca_cert: /some/path
+  cert: /some/path
+  key: /some/path
+  match_cn:
+    - pattern_1
+    - pattern_2
+```
+
+`match_cn` uses simple wildcards:
+
+* `*` matches a single domain component - so `foo.*.bar` matches `foo.one.bar` but not `foo.one.two.bar`.
+* `**` matches any number of domain components - `foo.**.bar` matches `foo.one.bar` and `foo.one.two.bar`.
+
+### `zkfp`: zero-knowledge frontend proxy
+
+SNI proxy that can route to the correct backends without the need for certificates on the edge.
+
+The schema looks like this:
 
 ```yaml
 listeners:
@@ -33,7 +69,7 @@ backends:
       - "example.com"
 ```
 
-## Requirements
+# Requirements
 
 * [envoyproto-python](https://github.com/fuhry/envoyproto-python).
 

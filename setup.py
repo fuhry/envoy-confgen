@@ -3,15 +3,15 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="envoyzkfp",
-    version="0.1.0",
+    name="envoyconfgen",
+    version="0.2.0",
     license='MIT',
     packages=find_packages(),
-    scripts=['envoy-zkfp'],
+    scripts=['envoy-confgen'],
     install_requires=[
         'PyYAML>=5.0',
     ],
     author='Dan Fuhry',
     author_email='dan@fuhry.com',
-    url='https://github.com/fuhry/openssh-ldap-authkeys',
+    url='https://github.com/fuhry/envoy-confgen',
 )

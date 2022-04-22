@@ -1,0 +1,13 @@
+listener:
+  port: 8001
+  ca_cert: /etc/secrets/mtls/root-ca.pem
+  cert: /etc/secrets/mtls/my-service/fullchain.pem
+  key: /etc/secrets/mtls/my-service/privkey.pem
+  match_cn:
+    - test-client.*.mydomain.local
+    - other-client.*.mydomain.local
+    - very-permissive.**.local
+backend:
+  host: 127.0.0.1
+  port: 8000
+

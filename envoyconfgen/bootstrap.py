@@ -2,19 +2,18 @@ from __future__ import annotations
 from typing import Collection
 
 from .config import singleton
-from .structs import SNIProxyListener, SNIProxyVirtualHost
 
 config = singleton.get_config()
 
 import envoyproto.envoy.config.core.v3 as core
 from envoyproto.envoy.config.bootstrap.v3 import bootstrap
 
-from .cluster import sni_reverse_proxy_http_cluster, sni_reverse_proxy_https_cluster
-from .listener import sni_reverse_proxy_listener
+import envoyproto.envoy.config.cluster.v3 as cluster
+import envoyproto.envoy.config.listener.v3 as listener
 
 def generate_bootstrap(
-    listeners: Collection[SNIProxyListener],
-    vhosts: Collection[SNIProxyVirtualHost]
+    listeners: Collection[listener.listener.Listener],
+    clusters: Collection[cluster.cluster.Cluster]
 ) -> bootstrap.Bootstrap:
     """
     Given lists of listeners and virtual hosts, generates a complete envoy toplevel config
@@ -31,16 +30,7 @@ def generate_bootstrap(
             ),
         ),
         static_resources=bootstrap.Bootstrap.StaticResources(
-            listeners=[
-                sni_reverse_proxy_listener(l.protocol, l.address, l.port, vhosts)
-                for l in listeners
-            ],
-            clusters=[
-                sni_reverse_proxy_http_cluster(vhost)
-                for vhost in vhosts
-            ] + [
-                sni_reverse_proxy_https_cluster(vhost)
-                for vhost in vhosts
-            ]
+            listeners=listeners,
+            clusters=clusters
         ),
     )

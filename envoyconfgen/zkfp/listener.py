@@ -7,59 +7,17 @@ from typing import Collection
 import envoyproto.envoy.config.listener.v3 as listener
 import envoyproto.envoy.config.core.v3 as core
 import envoyproto.envoy.config.route.v3 as route
-from envoyproto.envoy.extensions.filters.network.http_connection_manager.v3 import http_connection_manager as hcm
-from envoyproto.envoy.extensions.filters.http.router.v3 import router
-from envoyproto.envoy.extensions.filters.network.tcp_proxy.v3 import tcp_proxy
-from envoyproto.envoy.extensions.filters.listener.tls_inspector.v3 import tls_inspector
 
-from .helpers import http_cluster_name, https_cluster_name, typed_config, file_access_log
-from .structs import SNIProxyVirtualHost
+from envoyconfgen.filters import (
+    tls_inspector_listener_filter,
+    http_connection_manager_filter,
+    tcp_proxy_listener_filter,
+)
+from envoyconfgen.helpers import typed_config, file_access_log
+from envoyconfgen.structs import SNIProxyVirtualHost
 
-def tls_inspector_listener_filter() -> listener.listener_components.ListenerFilter:
-    return listener.listener_components.ListenerFilter(
-        name="envoy.filters.listener.tls_inspector",
-        typed_config=typed_config(
-            tls_inspector.TlsInspector()
-        )
-    )
+from .helpers import http_cluster_name, https_cluster_name
 
-
-def http_connection_manager_filter(
-    route_config: route.route.RouteConfiguration
-) -> listener.listener_components.Filter:
-    return listener.listener_components.Filter(
-        name="envoy.filters.network.http_connection_manager",
-        typed_config=typed_config(
-            hcm.HttpConnectionManager(
-                stat_prefix="ingress_http",
-                access_log=[
-                    file_access_log(),
-                ],
-                http_filters=[
-                    hcm.HttpFilter(
-                        name="envoy.filters.http.router",
-                        typed_config=typed_config(router.Router())
-                    ),
-                ],
-                route_config=route_config
-            ),
-        )
-    )
-
-
-def tcp_proxy_listener_filter(vhost: SNIProxyVirtualHost) -> listener.listener_components.Filter:
-    return listener.listener_components.Filter(
-        name="envoy.filters.network.tcp_proxy",
-        typed_config=typed_config(
-            tcp_proxy.TcpProxy(
-                stat_prefix='ingress_https',
-                access_log=[
-                    file_access_log(),
-                ],
-                cluster=https_cluster_name(vhost),
-            ),
-        ),
-    )
 
 
 def http_virtual_host(vhost: SNIProxyVirtualHost) -> route.route_components.VirtualHost:
@@ -128,7 +86,7 @@ def sni_reverse_proxy_listener(
                         ],
                     ),
                     filters=[
-                        tcp_proxy_listener_filter(vhost),
+                        tcp_proxy_listener_filter(https_cluster_name(vhost)),
                     ],
                 )
             )

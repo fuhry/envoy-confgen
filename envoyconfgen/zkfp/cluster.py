@@ -3,37 +3,18 @@ from typing import Callable
 import envoyproto.envoy.config.cluster.v3 as cluster
 import envoyproto.envoy.config.core.v3 as core
 import envoyproto.envoy.config.endpoint.v3 as endpoint
-from envoyproto.envoy.extensions.transport_sockets.proxy_protocol.v3 import upstream_proxy_protocol as upp
-from envoyproto.envoy.extensions.transport_sockets.raw_buffer.v3 import raw_buffer
 
 import google.protobuf.any_pb2
 import google.protobuf.message
 import google.protobuf.duration_pb2
 
-from .helpers import http_cluster_name, https_cluster_name, typed_config
-from .structs import SNIProxyVirtualHost
-
-def proxy_protocol_transport_socket(version: core.proxy_protocol.ProxyProtocolConfig.Version) -> core.base.TransportSocket:
-    """
-    Factory for proxy protocol transport sockets - supports proxy protocol both v1 and v2
-    """
-    return core.base.TransportSocket(
-        name="envoy.transport_sockets.proxy_protocol",
-        typed_config=typed_config(
-            upp.ProxyProtocolUpstreamTransport(
-                config=core.proxy_protocol.ProxyProtocolConfig(
-                    version=version,
-                ),
-                transport_socket=core.base.TransportSocket(
-                    name="envoy.transport_sockets.raw_buffer",
-                    typed_config=typed_config(raw_buffer.RawBuffer())
-                )
-            ),
-        )
-    )
+from envoyconfgen.filters import proxy_protocol_transport_socket
+from envoyconfgen.helpers import typed_config
+from envoyconfgen.structs import SNIProxyVirtualHost
+from .helpers import http_cluster_name, https_cluster_name
 
 
-def sni_proxy_locality_endpoint(host: str, port: int) -> endpoint.endpoint.ClusterLoadAssignment:
+def sni_proxy_locality_endpoint(host: str, port: int) -> endpoint.endpoint_components.LocalityLbEndpoints:
     return endpoint.endpoint_components.LocalityLbEndpoints(
         lb_endpoints=[
             endpoint.endpoint_components.LbEndpoint(

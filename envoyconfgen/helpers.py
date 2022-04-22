@@ -1,26 +1,19 @@
 import re
 
-from .config import singleton
+import google.protobuf.any_pb2
+import google.protobuf.message
+import google.protobuf.duration_pb2
 
 import envoyproto.envoy.config.accesslog.v3 as accesslog
 from envoyproto.envoy.extensions.access_loggers.file.v3 import file as fal
 
-from .structs import SNIProxyVirtualHost
-
-import google.protobuf.any_pb2
-import google.protobuf.message
-import google.protobuf.duration_pb2
+from .config import singleton
 
 config = singleton.get_config()
 
 def clean_vhost_name(host: str) -> str:
     return re.sub('[^a-z0-9]+', '_', host)
 
-def http_cluster_name(vhost: SNIProxyVirtualHost) -> str:
-    return '%s_%s_%d' % (clean_vhost_name(vhost.host), 'http', vhost.http_port)
-
-def https_cluster_name(vhost: SNIProxyVirtualHost) -> str:
-    return '%s_%s_%d' % (clean_vhost_name(vhost.host), 'https', vhost.https_port)
 
 def typed_config(message: google.protobuf.message.Message) -> google.protobuf.any_pb2.Any:
     msg = google.protobuf.any_pb2.Any()
