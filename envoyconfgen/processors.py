@@ -7,7 +7,7 @@ from .zkfp.cluster import sni_reverse_proxy_http_cluster, sni_reverse_proxy_http
 from .zkfp.listener import sni_reverse_proxy_listener
 from .mtls_sidecar.cluster import mtls_sidecar_cluster
 from .mtls_sidecar.listener import mtls_sidecar_listener
-from .structs import MTLSSidecar, SNIProxyListener, SNIProxyVirtualHost
+from .structs import MTLSSidecar, SNIProxyListener, SNIProxyVirtualHost, proxy_protocol_str_to_enum
 
 import envoyproto.envoy.config.cluster.v3 as cluster
 import envoyproto.envoy.config.listener.v3 as listener
