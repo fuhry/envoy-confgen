@@ -25,16 +25,18 @@ class AbstractProcessor:
 
     def validate_yaml(self, yaml: T_yaml) -> list[str]:
         if not isinstance(yaml, dict):
-            return ['YAML must be a dictionary at the top level']
+            return ["YAML must be a dictionary at the top level"]
 
         errors = []
         for k, t in self.required_keys:
             if k not in yaml:
                 errors.append(f'YAML is missing key "{k}"')
                 continue
-            
+
             if not isinstance(yaml[k], t):
-                errors.append(f'key "{k}" appears to be a {yaml[k].__class__.__name__}, expected {t}')
+                errors.append(
+                    f'key "{k}" appears to be a {yaml[k].__class__.__name__}, expected {t}'
+                )
                 continue
 
         return errors
@@ -43,15 +45,15 @@ class AbstractProcessor:
     def process_yaml(self, yaml: T_yaml) -> T_static_resources:
         pass
 
+
 class zkfp(AbstractProcessor):
-    def _yaml_to_internal_structs(self, contents: T_yaml) -> tuple[list[SNIProxyListener], list[SNIProxyVirtualHost]]:
-        listeners = [
-            SNIProxyListener(**l)
-            for l in contents['listeners']
-        ]
+    def _yaml_to_internal_structs(
+        self, contents: T_yaml
+    ) -> tuple[list[SNIProxyListener], list[SNIProxyVirtualHost]]:
+        listeners = [SNIProxyListener(**l) for l in contents["listeners"]]
 
         def filter_mandatory_args(backend: dict[str, Any]):
-            for key in ['host', 'patterns', 'proxy_protocol']:
+            for key in ["host", "patterns", "proxy_protocol"]:
                 if key in backend:
                     del backend[key]
 
@@ -59,59 +61,80 @@ class zkfp(AbstractProcessor):
 
         virtual_hosts = [
             SNIProxyVirtualHost(
-                host=backend['host'],
-                patterns=backend['patterns'],
+                host=backend["host"],
+                patterns=backend["patterns"],
                 proxy_protocol=(
-                    proxy_protocol_str_to_enum[backend['proxy_protocol']]
-                    if 'proxy_protocol' in backend and backend['proxy_protocol'] is not None
+                    proxy_protocol_str_to_enum[backend["proxy_protocol"]]
+                    if "proxy_protocol" in backend and backend["proxy_protocol"] is not None
                     else None
                 ),
-                **filter_mandatory_args(backend)
+                **filter_mandatory_args(backend),
             )
-            for backend in contents['backends']
+            for backend in contents["backends"]
         ]
 
         return listeners, virtual_hosts
-    
 
     @property
     def required_keys(self) -> list[tuple[str, type]]:
         return [
-            ('listeners', list),
-            ('backends', list),
+            ("listeners", list),
+            ("backends", list),
         ]
-        
-    
+
     def process_yaml(self, yaml: T_yaml) -> T_static_resources:
         listeners, vhosts = self._yaml_to_internal_structs(yaml)
 
         envoy_listeners = [
-            sni_reverse_proxy_listener(l.protocol, l.address, l.port, vhosts)
-            for l in listeners
+            sni_reverse_proxy_listener(l.protocol, l.address, l.port, vhosts) for l in listeners
         ]
 
-        envoy_clusters = [
-            sni_reverse_proxy_http_cluster(vhost)
-            for vhost in vhosts
-        ] + [
-            sni_reverse_proxy_https_cluster(vhost)
-            for vhost in vhosts
+        envoy_clusters = [sni_reverse_proxy_http_cluster(vhost) for vhost in vhosts] + [
+            sni_reverse_proxy_https_cluster(vhost) for vhost in vhosts
         ]
 
         return envoy_listeners, envoy_clusters
+
 
 class mtls_sidecar(AbstractProcessor):
     @property
     def required_keys(self) -> list[tuple[str, type]]:
         return [
-            ('listener', dict),
-            ('backend', dict),
+            ("listener", dict),
+            ("backend", dict),
         ]
 
+    def validate_yaml(self, yaml: T_yaml) -> list[str]:
+        errors = super().validate_yaml(yaml)
+        if len(errors) > 0:
+            return errors
+
+        match_keys = frozenset(["match_dns", "match_spiffe"])
+        match_len = 0
+        for key in match_keys:
+            if key in yaml["listener"] and isinstance(yaml["listener"][key], list):
+                match_len += len(yaml["listener"][key])
+
+        if match_len < 1:
+            errors.append(
+                'At least one matching criterion (keys "%s") must be specified in the listener.'
+                % ('", "'.join(match_keys))
+            )
+
+        return errors
+
     def process_yaml(self, yaml: T_yaml) -> T_static_resources:
+        if "match_spiffe" in yaml["listener"]:
+            yaml["listener"]["match_spiffe"] = [
+                MTLSSidecar.Listener.SPIFFEMatch(**item)
+                for item in yaml["listener"]["match_spiffe"]
+            ]
+        else:
+            yaml["listener"]["match_spiffe"] = []
+
         as_struct = MTLSSidecar(
-            backend=MTLSSidecar.Backend(**yaml['backend']),
-            listener=MTLSSidecar.Listener(**yaml['listener']),
+            backend=MTLSSidecar.Backend(**yaml["backend"]),
+            listener=MTLSSidecar.Listener(**yaml["listener"]),
         )
 
         envoy_clusters = [mtls_sidecar_cluster(as_struct.backend)]
@@ -123,13 +146,13 @@ class mtls_sidecar(AbstractProcessor):
 def is_a_processor(member: Any) -> bool:
     if not isinstance(member, type):
         return False
-        
+
     if member.__module__ != __name__:
         return False
-    
+
     if member not in AbstractProcessor.__subclasses__():
         return False
-    
+
     return True
 
 

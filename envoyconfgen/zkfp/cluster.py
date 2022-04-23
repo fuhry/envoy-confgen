@@ -14,16 +14,15 @@ from envoyconfgen.structs import SNIProxyVirtualHost
 from .helpers import http_cluster_name, https_cluster_name
 
 
-def sni_proxy_locality_endpoint(host: str, port: int) -> endpoint.endpoint_components.LocalityLbEndpoints:
+def sni_proxy_locality_endpoint(
+    host: str, port: int
+) -> endpoint.endpoint_components.LocalityLbEndpoints:
     return endpoint.endpoint_components.LocalityLbEndpoints(
         lb_endpoints=[
             endpoint.endpoint_components.LbEndpoint(
                 endpoint=endpoint.endpoint_components.Endpoint(
                     address=core.address.Address(
-                        socket_address=core.address.SocketAddress(
-                            address=host,
-                            port_value=port
-                        ),
+                        socket_address=core.address.SocketAddress(address=host, port_value=port),
                     ),
                 )
             ),
@@ -32,9 +31,7 @@ def sni_proxy_locality_endpoint(host: str, port: int) -> endpoint.endpoint_compo
 
 
 def _sni_reverse_proxy_cluster(
-    vhost: SNIProxyVirtualHost,
-    port: int,
-    name_func: Callable[[SNIProxyVirtualHost], str]
+    vhost: SNIProxyVirtualHost, port: int, name_func: Callable[[SNIProxyVirtualHost], str]
 ) -> cluster.cluster.Cluster:
     """
     generate a cluster for an http or https backend
@@ -45,7 +42,7 @@ def _sni_reverse_proxy_cluster(
     transport_socket = None
     if vhost.proxy_protocol is not None:
         transport_socket = proxy_protocol_transport_socket(vhost.proxy_protocol)
-    
+
     return cluster.cluster.Cluster(
         name=name_func(vhost),
         connect_timeout=google.protobuf.duration_pb2.Duration(seconds=5),
@@ -61,15 +58,9 @@ def _sni_reverse_proxy_cluster(
     )
 
 
-def sni_reverse_proxy_http_cluster(
-    vhost: SNIProxyVirtualHost
-) -> cluster.cluster.Cluster:
+def sni_reverse_proxy_http_cluster(vhost: SNIProxyVirtualHost) -> cluster.cluster.Cluster:
     return _sni_reverse_proxy_cluster(vhost, vhost.http_port, http_cluster_name)
 
 
-def sni_reverse_proxy_https_cluster(
-    vhost: SNIProxyVirtualHost
-) -> cluster.cluster.Cluster:
+def sni_reverse_proxy_https_cluster(vhost: SNIProxyVirtualHost) -> cluster.cluster.Cluster:
     return _sni_reverse_proxy_cluster(vhost, vhost.https_port, https_cluster_name)
-
-

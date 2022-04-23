@@ -25,26 +25,21 @@ class ManagedLogger:
         try:
             return getattr(logging, level_str.upper())
         except AttributeError:
-            raise ValueError("Unknown log level: %s" % (level_str));
+            raise ValueError("Unknown log level: %s" % (level_str))
 
     def load_config(self, config):
-        self.cli_handler.setLevel(
-            self.parse_level(config['logging']['cli_level'])
-        )
+        self.cli_handler.setLevel(self.parse_level(config["logging"]["cli_level"]))
 
-        cli_formatter = logging.Formatter(config['logging']['cli_format'],
-            datefmt=config['logging']['date_format'])
+        cli_formatter = logging.Formatter(
+            config["logging"]["cli_format"], datefmt=config["logging"]["date_format"]
+        )
         self.cli_handler.setFormatter(cli_formatter)
 
-        self.syslog_handler.setLevel(
-            self.parse_level(config['logging']['syslog_level'])
-        )
+        self.syslog_handler.setLevel(self.parse_level(config["logging"]["syslog_level"]))
 
         try:
-            self.file_handler = logging.FileHandler(config['logging']['file_target'])
-            self.file_handler.setLevel(
-                self.parse_level(config['logging']['file_level'])
-            )
+            self.file_handler = logging.FileHandler(config["logging"]["file_target"])
+            self.file_handler.setLevel(self.parse_level(config["logging"]["file_level"]))
             self.file_handler.setFormatter(cli_formatter)
             logging.getLogger().addHandler(self.file_handler)
         except KeyError:
@@ -54,25 +49,26 @@ class ManagedLogger:
     def setup_formatter(self):
         pass
 
+
 class Config:
     default_config = {
-        'logging': {
-            'date_format': '%Y-%m-%d %H:%M:%S %z',
-            'cli_target': 'stdout',
-            'cli_level': 'warning',
-            'cli_format': '[%(asctime)s] [%(levelname) 7s] [%(name)  21s] %(message)s',
-            'file_level': 'info',
-            'syslog_level': 'warn',
+        "logging": {
+            "date_format": "%Y-%m-%d %H:%M:%S %z",
+            "cli_target": "stdout",
+            "cli_level": "warning",
+            "cli_format": "[%(asctime)s] [%(levelname) 7s] [%(name)  21s] %(message)s",
+            "file_level": "info",
+            "syslog_level": "warn",
         },
-        'envoy': {
-            'access_log': '/dev/stdout',
-            'admin_port': 9901,
+        "envoy": {
+            "access_log": "/dev/stdout",
+            "admin_port": 9901,
         },
     }
 
     search_paths = (
-        os.path.join(os.getcwd(), 'conf', 'envoy-confgen.ini'),
-        '/etc/envoy/confgen.ini',
+        os.path.join(os.getcwd(), "conf", "envoy-confgen.ini"),
+        "/etc/envoy/confgen.ini",
     )
 
     def __init__(self):
@@ -91,37 +87,32 @@ class Config:
         path = self.read_config_from_file()
 
         if path is not None:
-            logger.info('Successfully loaded the configuration from %s' % (path))
+            logger.info("Successfully loaded the configuration from %s" % (path))
 
         self.configure_logging()
-
 
     def read_config_from_file(self):
         for path in self.search_paths:
             if os.path.isfile(path):
                 self.force_load_file(path)
 
-
     def force_load_file(self, path):
         if not os.path.isfile(path):
             logger.error("Cannot read config file: %s" % (path))
 
         try:
-            logger.debug('Trying to open config path: %s' % (path))
-            with open(path, 'r') as fp:
+            logger.debug("Trying to open config path: %s" % (path))
+            with open(path, "r") as fp:
                 self.loaded_config.read_file(fp)
 
             return path
         except (PermissionError, FileNotFoundError) as e:
-            logger.debug('Unable to open config: %s: %s: %s' % (
-                path,
-                e.__class__.__name__,
-                repr(e)
-            ))
+            logger.debug(
+                "Unable to open config: %s: %s: %s" % (path, e.__class__.__name__, repr(e))
+            )
 
     def configure_logging(self):
         self.managed_logger.load_config(self.loaded_config)
-
 
     def get_config(self):
         return self.loaded_config

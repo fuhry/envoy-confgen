@@ -3,10 +3,15 @@ listener:
   ca_cert: /etc/secrets/mtls/root-ca.pem
   cert: /etc/secrets/mtls/my-service/fullchain.pem
   key: /etc/secrets/mtls/my-service/privkey.pem
-  match_cn:
+  match_dns:
     - test-client.*.mydomain.local
     - other-client.*.mydomain.local
     - very-permissive.**.local
+  match_spiffe:
+    - trust_domain: mydomain.local
+      service: test-client
+    - trust_domain: '*.local'
+      service: '*/other-client'
 backend:
   host: 127.0.0.1
   port: 8000

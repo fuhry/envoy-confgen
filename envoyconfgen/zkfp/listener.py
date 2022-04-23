@@ -19,17 +19,13 @@ from envoyconfgen.structs import SNIProxyVirtualHost
 from .helpers import http_cluster_name, https_cluster_name
 
 
-
 def http_virtual_host(vhost: SNIProxyVirtualHost) -> route.route_components.VirtualHost:
     return route.route_components.VirtualHost(
-        name='%s_service_%s_%d' % ((vhost.host), 'http', vhost.http_port),
-        domains=vhost.patterns + [
-            f'{pattern}:{vhost.http_port}'
-            for pattern in vhost.patterns
-        ],
+        name="%s_service_%s_%d" % ((vhost.host), "http", vhost.http_port),
+        domains=vhost.patterns + [f"{pattern}:{vhost.http_port}" for pattern in vhost.patterns],
         routes=[
             route.route_components.Route(
-                match=route.route_components.RouteMatch(prefix='/'),
+                match=route.route_components.RouteMatch(prefix="/"),
                 route=route.route_components.RouteAction(
                     cluster=http_cluster_name(vhost),
                 ),
@@ -38,27 +34,25 @@ def http_virtual_host(vhost: SNIProxyVirtualHost) -> route.route_components.Virt
     )
 
 
-def sni_proxy_http_routes(vhosts: Collection[SNIProxyVirtualHost]) -> route.route.RouteConfiguration:
+def sni_proxy_http_routes(
+    vhosts: Collection[SNIProxyVirtualHost],
+) -> route.route.RouteConfiguration:
     rc = route.route.RouteConfiguration(
-        name='local_route',
-        virtual_hosts=[
-            http_virtual_host(vhost)
-            for vhost in vhosts
-        ]
+        name="local_route", virtual_hosts=[http_virtual_host(vhost) for vhost in vhosts]
     )
-    
+
     return rc
 
 
 def sni_reverse_proxy_listener(
     protocol: str,
-    address: str = '::',
+    address: str = "::",
     port: int = 443,
     virtual_hosts: Collection[SNIProxyVirtualHost] = [],
 ) -> listener.listener.Listener:
     filter_chains = []
     listener_filters = []
-    if protocol == 'http':
+    if protocol == "http":
         # http listeners get to do this the easy way using real virtual hosts
         filter_chains.append(
             listener.listener_components.FilterChain(
@@ -69,7 +63,7 @@ def sni_reverse_proxy_listener(
                 ],
             )
         )
-    elif protocol == 'https':
+    elif protocol == "https":
         # https listeners have to match much earlier in the negotiation process - the
         # `server_name` field gets populated by the `tls_inspector` listener filter and
         # is used here for matching.
@@ -80,10 +74,7 @@ def sni_reverse_proxy_listener(
             filter_chains.append(
                 listener.listener_components.FilterChain(
                     filter_chain_match=listener.listener_components.FilterChainMatch(
-                        server_names=[
-                            pattern
-                            for pattern in vhost.patterns
-                        ],
+                        server_names=[pattern for pattern in vhost.patterns],
                     ),
                     filters=[
                         tcp_proxy_listener_filter(https_cluster_name(vhost)),

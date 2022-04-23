@@ -14,7 +14,9 @@ from envoyconfgen.helpers import typed_config
 from envoyconfgen.structs import MTLSSidecar
 
 
-def mtls_sidecar_locality_endpoint(params: MTLSSidecar.Backend) -> endpoint.endpoint_components.LocalityLbEndpoints:
+def mtls_sidecar_locality_endpoint(
+    params: MTLSSidecar.Backend,
+) -> endpoint.endpoint_components.LocalityLbEndpoints:
     return endpoint.endpoint_components.LocalityLbEndpoints(
         lb_endpoints=[
             endpoint.endpoint_components.LbEndpoint(
@@ -36,14 +38,12 @@ def mtls_sidecar_cluster(params: MTLSSidecar.Backend) -> cluster.cluster.Cluster
 
     if params.ca_cert is not None:
         transport_socket = core.base.TransportSocket(
-            name='envoy.transport_sockets.tls',
+            name="envoy.transport_sockets.tls",
             typed_config=typed_config(
                 tls.tls.UpstreamTlsContext(
                     common_tls_context=tls.tls.CommonTlsContext(
                         validation_context=tls.common.CertificateValidationContext(
-                            trusted_ca=core.base.DataSource(
-                                filename=params.ca_cert
-                            ),
+                            trusted_ca=core.base.DataSource(filename=params.ca_cert),
                         ),
                     ),
                 ),
@@ -51,15 +51,13 @@ def mtls_sidecar_cluster(params: MTLSSidecar.Backend) -> cluster.cluster.Cluster
         )
 
     return cluster.cluster.Cluster(
-        name='mtls_sidecar_backend',
+        name="mtls_sidecar_backend",
         connect_timeout=google.protobuf.duration_pb2.Duration(seconds=5),
         type=cluster.cluster.Cluster.LOGICAL_DNS,
         dns_lookup_family=cluster.cluster.Cluster.AUTO,
         transport_socket=transport_socket,
         load_assignment=endpoint.endpoint.ClusterLoadAssignment(
-            cluster_name='mtls_sidecar_backend',
-            endpoints=[
-                mtls_sidecar_locality_endpoint(params)
-            ],
+            cluster_name="mtls_sidecar_backend",
+            endpoints=[mtls_sidecar_locality_endpoint(params)],
         ),
     )

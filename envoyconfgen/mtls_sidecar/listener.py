@@ -25,20 +25,63 @@ def mtls_sidecar_virtual_host() -> route.route_components.VirtualHost:
         domains=["*"],
         routes=[
             route.route_components.Route(
-                match=route.route_components.RouteMatch(prefix='/'),
+                match=route.route_components.RouteMatch(prefix="/"),
                 route=route.route_components.RouteAction(
-                    cluster='mtls_sidecar_backend',
+                    cluster="mtls_sidecar_backend",
                 ),
             ),
-        ]
+        ],
     )
 
 
 def mtls_sidecar_root_routes() -> route.route.RouteConfiguration:
     return route.route.RouteConfiguration(
-        name='local_route',
+        name="local_route",
         virtual_hosts=[mtls_sidecar_virtual_host()],
     )
+
+
+def mtls_sidecar_dns_match(pattern: str) -> tls.common.SubjectAltNameMatcher:
+    return tls.common.SubjectAltNameMatcher(
+        san_type=tls.common.SubjectAltNameMatcher.DNS,
+        matcher=string.StringMatcher(
+            safe_regex=regex.RegexMatcher(
+                google_re2=regex.RegexMatcher.GoogleRE2(),
+                regex=(
+                    "^"
+                    + pattern.replace(".", "\\.")
+                    .replace("**", "[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+){0,}")
+                    .replace("*", "[A-Za-z0-9_-]+")
+                    + "$"
+                ),
+            ),
+        ),
+    )
+
+
+def mtls_sidecar_spiffe_match(
+    principal: MTLSSidecar.Listener.SPIFFEMatch,
+) -> tls.common.SubjectAltNameMatcher:
+    return tls.common.SubjectAltNameMatcher(
+        san_type=tls.common.SubjectAltNameMatcher.URI,
+        matcher=string.StringMatcher(
+            safe_regex=regex.RegexMatcher(
+                google_re2=regex.RegexMatcher.GoogleRE2(),
+                regex=(
+                    "^spiffe://"
+                    + principal.trust_domain.replace(".", "\\.")
+                    .replace("**", "[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+){0,}")
+                    .replace("*", "[A-Za-z0-9_-]+")
+                    + "/"
+                    + principal.service.replace(".", "\\.")
+                    .replace("**", "[A-Za-z0-9_\.-]+(\\/[A-Za-z0-9_-]+){0,}")
+                    .replace("*", "[A-Za-z0-9_\.-]+")
+                    + "$"
+                ),
+            ),
+        ),
+    )
+
 
 def mtls_sidecar_listener(params: MTLSSidecar.Listener) -> listener.listener.Listener:
     transport_socket = core.base.TransportSocket(
@@ -47,25 +90,14 @@ def mtls_sidecar_listener(params: MTLSSidecar.Listener) -> listener.listener.Lis
             tls.tls.DownstreamTlsContext(
                 common_tls_context=tls.tls.CommonTlsContext(
                     validation_context=tls.common.CertificateValidationContext(
-                        trusted_ca=core.base.DataSource(
-                            filename=params.ca_cert
+                        trusted_ca=core.base.DataSource(filename=params.ca_cert),
+                        match_typed_subject_alt_names=(
+                            [mtls_sidecar_dns_match(pattern) for pattern in params.match_dns]
+                            + [
+                                mtls_sidecar_spiffe_match(principal)
+                                for principal in params.match_spiffe
+                            ]
                         ),
-                        match_typed_subject_alt_names=[
-                            tls.common.SubjectAltNameMatcher(
-                                san_type=tls.common.SubjectAltNameMatcher.DNS,
-                                matcher=string.StringMatcher(
-                                    safe_regex=regex.RegexMatcher(
-                                        google_re2=regex.RegexMatcher.GoogleRE2(),
-                                        regex=(
-                                            '^' +
-                                            pattern.replace('.', '\\.').replace('**', '[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+){0,}').replace('*', '[A-Za-z0-9_-]+') +
-                                            '$'
-                                        ),
-                                    ),
-                                ),
-                            )
-                            for pattern in params.match_cn
-                        ],
                     ),
                     tls_certificates=[
                         tls.common.TlsCertificate(
@@ -76,14 +108,14 @@ def mtls_sidecar_listener(params: MTLSSidecar.Listener) -> listener.listener.Lis
                 ),
                 require_client_certificate=BoolValue(value=True),
             ),
-        )
+        ),
     )
 
     return listener.listener.Listener(
         name="mtls_sidecar_listener",
         address=core.address.Address(
             socket_address=core.address.SocketAddress(
-                address='::',
+                address="::",
                 port_value=params.port,
                 ipv4_compat=True,
             ),

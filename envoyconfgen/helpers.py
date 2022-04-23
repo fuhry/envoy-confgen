@@ -11,8 +11,9 @@ from .config import singleton
 
 config = singleton.get_config()
 
+
 def clean_vhost_name(host: str) -> str:
-    return re.sub('[^a-z0-9]+', '_', host)
+    return re.sub("[^a-z0-9]+", "_", host)
 
 
 def typed_config(message: google.protobuf.message.Message) -> google.protobuf.any_pb2.Any:
@@ -26,12 +27,6 @@ def typed_config(message: google.protobuf.message.Message) -> google.protobuf.an
 
 def file_access_log() -> accesslog.accesslog.AccessLog:
     return accesslog.accesslog.AccessLog(
-       name="envoy.access_loggers.file",
-       typed_config=typed_config(
-           fal.FileAccessLog(
-               path=config['envoy']['access_log']
-           )
-       ) 
+        name="envoy.access_loggers.file",
+        typed_config=typed_config(fal.FileAccessLog(path=config["envoy"]["access_log"])),
     )
-
-
