@@ -71,8 +71,8 @@ class Config:
     }
 
     search_paths = (
-        os.path.join(os.getcwd(), 'conf', 'envoy-zkfp.ini'),
-        '/etc/envoy/zkfp.ini',
+        os.path.join(os.getcwd(), 'conf', 'envoy-confgen.ini'),
+        '/etc/envoy/confgen.ini',
     )
 
     def __init__(self):
