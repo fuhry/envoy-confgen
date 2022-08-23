@@ -33,6 +33,8 @@ listener:
   match_cn:
     - pattern_1
     - pattern_2
+  timeouts:             # optional
+    route: 120s         # optional, 120s is the default
 ```
 
 `match_cn` uses simple wildcards:

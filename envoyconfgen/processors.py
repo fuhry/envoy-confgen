@@ -7,7 +7,7 @@ from .zkfp.cluster import sni_reverse_proxy_http_cluster, sni_reverse_proxy_http
 from .zkfp.listener import sni_reverse_proxy_listener
 from .mtls_sidecar.cluster import mtls_sidecar_cluster
 from .mtls_sidecar.listener import mtls_sidecar_listener
-from .structs import MTLSSidecar, SNIProxyListener, SNIProxyVirtualHost, proxy_protocol_str_to_enum
+from .structs import MTLSSidecar, SNIProxyListener, SNIProxyVirtualHost, Timeouts, proxy_protocol_str_to_enum
 
 import envoyproto.envoy.config.cluster.v3 as cluster
 import envoyproto.envoy.config.listener.v3 as listener
@@ -131,6 +131,9 @@ class mtls_sidecar(AbstractProcessor):
             ]
         else:
             yaml["listener"]["match_spiffe"] = []
+
+        if "timeouts" in yaml["listener"]:
+            yaml["listener"]["timeouts"] = Timeouts(**yaml["listener"]["timeouts"])
 
         as_struct = MTLSSidecar(
             backend=MTLSSidecar.Backend(**yaml["backend"]),

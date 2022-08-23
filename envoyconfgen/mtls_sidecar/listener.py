@@ -17,9 +17,10 @@ from envoyconfgen.filters import (
 from envoyconfgen.helpers import typed_config, file_access_log
 from envoyconfgen.structs import MTLSSidecar
 from google.protobuf.wrappers_pb2 import BoolValue
+import google.protobuf.duration_pb2
 
 
-def mtls_sidecar_virtual_host() -> route.route_components.VirtualHost:
+def mtls_sidecar_virtual_host(params: MTLSSidecar.Listener) -> route.route_components.VirtualHost:
     return route.route_components.VirtualHost(
         name="mtls_sidecar_vhost",
         domains=["*"],
@@ -28,16 +29,17 @@ def mtls_sidecar_virtual_host() -> route.route_components.VirtualHost:
                 match=route.route_components.RouteMatch(prefix="/"),
                 route=route.route_components.RouteAction(
                     cluster="mtls_sidecar_backend",
+                    timeout=google.protobuf.duration_pb2.Duration(seconds=params.timeouts.route),
                 ),
             ),
         ],
     )
 
 
-def mtls_sidecar_root_routes() -> route.route.RouteConfiguration:
+def mtls_sidecar_root_routes(params: MTLSSidecar.Listener) -> route.route.RouteConfiguration:
     return route.route.RouteConfiguration(
         name="local_route",
-        virtual_hosts=[mtls_sidecar_virtual_host()],
+        virtual_hosts=[mtls_sidecar_virtual_host(params)],
     )
 
 
@@ -125,7 +127,7 @@ def mtls_sidecar_listener(params: MTLSSidecar.Listener) -> listener.listener.Lis
                 transport_socket=transport_socket,
                 filters=[
                     http_connection_manager_filter(
-                        route_config=mtls_sidecar_root_routes(),
+                        route_config=mtls_sidecar_root_routes(params),
                     )
                 ],
             ),

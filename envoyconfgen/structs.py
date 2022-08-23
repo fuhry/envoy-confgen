@@ -6,6 +6,8 @@ from typing import NamedTuple, Optional
 import envoyproto.envoy.config.core.v3 as core
 from envoyproto.envoy.config.core.v3.proxy_protocol_pb2 import ProxyProtocolConfig
 
+class Timeouts(NamedTuple):
+    route: int = 120
 
 class SNIProxyListener(NamedTuple):
     protocol: str
@@ -35,6 +37,7 @@ class MTLSSidecar(NamedTuple):
         key: str
         match_dns: Optional[list[str]] = []
         match_spiffe: Optional[list[SPIFFEMatch]] = []
+        timeouts: Timeouts = Timeouts()
 
     class Backend(NamedTuple):
         port: int

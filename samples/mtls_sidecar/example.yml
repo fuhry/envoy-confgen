@@ -12,6 +12,8 @@ listener:
       service: test-client
     - trust_domain: '*.local'
       service: '*/other-client'
+  timeouts:
+    route: 60
 backend:
   host: 127.0.0.1
   port: 8000
