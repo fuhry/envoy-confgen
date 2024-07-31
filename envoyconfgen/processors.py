@@ -21,7 +21,7 @@ class AbstractProcessor:
     @property
     @abstractmethod
     def required_keys(self) -> list[tuple[str, type]]:
-        pass
+        raise NotImplementedError
 
     def validate_yaml(self, yaml: T_yaml) -> list[str]:
         if not isinstance(yaml, dict):
@@ -43,7 +43,7 @@ class AbstractProcessor:
 
     @abstractmethod
     def process_yaml(self, yaml: T_yaml) -> T_static_resources:
-        pass
+        raise NotImplementedError
 
 
 class zkfp(AbstractProcessor):
@@ -134,6 +134,11 @@ class mtls_sidecar(AbstractProcessor):
 
         if "timeouts" in yaml["listener"]:
             yaml["listener"]["timeouts"] = Timeouts(**yaml["listener"]["timeouts"])
+
+        if "protocol" in yaml["listener"]:
+            yaml["listener"]["protocol"] = MTLSSidecar.Listener.UpstreamProtocol(
+                yaml["listener"]["protocol"]
+            )
 
         as_struct = MTLSSidecar(
             backend=MTLSSidecar.Backend(**yaml["backend"]),

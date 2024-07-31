@@ -76,8 +76,8 @@ def mtls_sidecar_spiffe_match(
                     .replace("*", "[A-Za-z0-9_-]+")
                     + "/"
                     + principal.service.replace(".", "\\.")
-                    .replace("**", "[A-Za-z0-9_\.-]+(\\/[A-Za-z0-9_-]+){0,}")
-                    .replace("*", "[A-Za-z0-9_\.-]+")
+                    .replace("**", "[A-Za-z0-9_\\.-]+(\\/[A-Za-z0-9_-]+){0,}")
+                    .replace("*", "[A-Za-z0-9_\\.-]+")
                     + "$"
                 ),
             ),
@@ -113,6 +113,16 @@ def mtls_sidecar_listener(params: MTLSSidecar.Listener) -> listener.listener.Lis
         ),
     )
 
+    network_filter: listener.listener_components.Filter | None = None
+    if params.protocol is MTLSSidecar.Listener.UpstreamProtocol.HTTP:
+        network_filter = http_connection_manager_filter(
+            route_config=mtls_sidecar_root_routes(params),
+        )
+    elif params.protocol is MTLSSidecar.Listener.UpstreamProtocol.TCP:
+        network_filter = tcp_proxy_listener_filter(cluster_name="mtls_sidecar_backend")
+
+    assert network_filter is not None, (f"unhandled upstream protocol: {params.protocol}")
+
     return listener.listener.Listener(
         name="mtls_sidecar_listener",
         address=core.address.Address(
@@ -126,9 +136,7 @@ def mtls_sidecar_listener(params: MTLSSidecar.Listener) -> listener.listener.Lis
             listener.listener_components.FilterChain(
                 transport_socket=transport_socket,
                 filters=[
-                    http_connection_manager_filter(
-                        route_config=mtls_sidecar_root_routes(params),
-                    )
+                    network_filter
                 ],
             ),
         ],

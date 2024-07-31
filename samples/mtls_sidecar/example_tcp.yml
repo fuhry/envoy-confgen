@@ -1,0 +1,15 @@
+listener:
+  port: 8001
+  ca_cert: /etc/secrets/mtls/root-ca.pem
+  cert: /etc/secrets/mtls/my-service/fullchain.pem
+  key: /etc/secrets/mtls/my-service/privkey.pem
+  protocol: tcp
+  match_spiffe:
+    - trust_domain: '**.cluster.local'
+      service: ns/default/sa/sample
+  timeouts:
+    route: 60
+backend:
+  host: 127.0.0.1
+  port: 8000
+

@@ -1,6 +1,6 @@
 from __future__ import annotations
-from collections import defaultdict
 
+import enum
 from typing import NamedTuple, Optional
 
 import envoyproto.envoy.config.core.v3 as core
@@ -31,10 +31,15 @@ class MTLSSidecar(NamedTuple):
             trust_domain: str
             service: str
 
+        class UpstreamProtocol(enum.StrEnum):
+            HTTP = "http"
+            TCP = "tcp"
+
         port: int
         ca_cert: str
         cert: str
         key: str
+        protocol: UpstreamProtocol = UpstreamProtocol.HTTP
         match_dns: Optional[list[str]] = []
         match_spiffe: Optional[list[SPIFFEMatch]] = []
         timeouts: Timeouts = Timeouts()

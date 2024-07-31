@@ -30,6 +30,7 @@ listener:
   ca_cert: /some/path
   cert: /some/path
   key: /some/path
+  protocol: http        # or tcp
   match_cn:
     - pattern_1
     - pattern_2
